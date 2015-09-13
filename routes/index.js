@@ -1,3 +1,7 @@
+// the client needs to clear the add transaction screen
+// also the POST /transactions function needs to return at least the index of the new column
+// maybe have a text file or another database table to store different expense types
+
 var express = require('express');
 var router = express.Router();
 
@@ -14,23 +18,53 @@ db.serialize(function() {
 // get rid of the db stuff in the routes, they're just for testing
 // the home page will also need to be redesigned to work with the app
 
+// routes to add:
+// query for transactions within a range of days (return json array)
+// 	maybe also query by classification?
+// add a new transaction [x]
+// update a transaction 
+// delete a transaction 
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  db.run("INSERT INTO Transactions (amount, description) VALUES (?, ?)", 1.55, "testing stuff");
-  
   res.render('index', { title: 'Express' });
 });
 
-router.post('/', function(req, res) {
-  db.all("SELECT * FROM Transactions", function(err, rows) {
-    if (err != null)
+/* Get a list of transactions for the given day. */
+router.get('/transactions/:date', function(req, res, next) {
+  //query database for given day (yyyy-mm-dd), return as array
+  db.all("SELECT * FROM Transactions WHERE date = ?", req.params.date, function(err, rows) {
+    if (err != undefined || rows == null)
     {
-      res.send(err);
-      return;
+      res.status(404).end(); 
     }
-    
-    res.send({ amount: "$" +  rows[1].amount.toString() , description: rows[1].description });
+    res.json(rows); 
   });
+});
+
+/* Add a new transaction to the database. */
+router.post('/transactions', function(req, res, next) {
+  //console.log(req.body);
+  var properties = "classification, type, amount, description";
+  var numProperties = 4;
+
+  if (req.body.hasOwnProperty("date"))
+  {
+    properties = "date, " + properties; 
+    numProperties++;
+  }
+  
+  if (numProperties == 4)
+  {
+    db.run("INSERT INTO Transactions (" + properties + ") VALUES (?, ?, ?, ?)", req.body.classification, req.body.type, req.body.amount, req.body.description); 
+  }
+  else if (numProperties == 5) //check is for clarity rather than necessity
+  {
+    db.run("INSERT INTO Transactions (" + properties + ") VALUES (?, ?, ?, ?, ?)", req.body.date, req.body.classification, req.body.type, req.body.amount, req.body.description); 
+  }
+
+  //get id of newly created db entry
+  res.end();
 });
 
 module.exports = router;
