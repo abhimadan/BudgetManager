@@ -1,6 +1,11 @@
-// the client needs to clear the add transaction screen
-// also the POST /transactions function needs to return at least the index of the new column
+// the client needs to clear the add transaction screen so that duplicate transactions aren't added
 // maybe have a text file or another database table to store different expense types
+// this feature would require some more REST routes related to adding, deleting, and getting the different types
+
+function isNumber(x)
+{
+  return typeof(x) === "number";
+}
 
 var express = require('express');
 var router = express.Router();
@@ -15,11 +20,10 @@ db.serialize(function() {
 
 // transactionId, classification (income or expense), type (food, groceries, etc.), amount, description, date
 
-// get rid of the db stuff in the routes, they're just for testing
 // the home page will also need to be redesigned to work with the app
 
 // routes to add:
-// query for transactions within a range of days (return json array)
+// query for transactions within a day, month, or year [x]
 // 	maybe also query by classification?
 // add a new transaction [x]
 // update a transaction 
@@ -31,20 +35,112 @@ router.get('/', function(req, res, next) {
 });
 
 /* Get a list of transactions for the given day. */
-router.get('/transactions/:date', function(req, res, next) {
-  //query database for given day (yyyy-mm-dd), return as array
-  db.all("SELECT * FROM Transactions WHERE date = ?", req.params.date, function(err, rows) {
+router.get('/transactions/:year/:month/:day', function(req, res, next) {
+  if (isNaN(req.params.year) || isNaN(req.params.month) || isNaN(req.params.day)) //parameters must be numbers
+  {
+    console.log("The year " + req.params.year + " or the month " + req.params.month + " or the day " + req.params.day + " is not a number.");
+    res.status(404).end();
+    return;
+  }
+  
+  var year = parseInt(req.params.year);
+  var month = parseInt(req.params.month);
+  var day = parseInt(req.params.day);
+
+  if (month < 1 || month > 12 || year < 1) //invalid year or month
+  {
+    console.log("The year " + year + " or the month " + month + " is invalid.");
+    res.status(404).end();
+    return;
+  }
+  
+  var dateString = new Date(year, month - 1, day).toJSON().substr(0, 10);
+  
+  if (isNaN(Date.parse(dateString)))
+  {
+    console.log("The date " + dateString + " is invalid.");
+    res.status(404).end();
+    return;
+  }
+
+  db.all("SELECT * FROM Transactions WHERE date = ?", dateString, function(err, rows) {
     if (err != undefined || rows == null)
     {
+      console.log("Error: " + err);  
       res.status(404).end(); 
+      return;
     }
     res.json(rows); 
   });
 });
 
+/* Get a list of transactions for the given month. */
+router.get('/transactions/:year/:month', function(req, res, next) {
+  if (isNaN(req.params.year) || isNaN(req.params.month)) //parameters must be numbers
+  {
+    console.log("The year " + req.params.year + " or the month " + req.params.month + " is not a number.");
+    res.status(404).end();
+    return;
+  }
+  
+  var year = parseInt(req.params.year);
+  var month = parseInt(req.params.month);
+
+  if (month < 1 || month > 12 || year < 1) //invalid year or month
+  {
+    console.log("The year " + year + " or the month " + month + " is invalid.");
+    res.status(404).end();
+    return;
+  }
+
+  var daysInMonth = new Date(year, month, 0).getDate();
+  var begMonth = new Date(year, month - 1, 1).toJSON().substr(0, 10);
+  var endMonth = new Date(year, month - 1, daysInMonth).toJSON().substr(0, 10);
+
+  db.all("SELECT * FROM Transactions WHERE date BETWEEN ? AND ?", begMonth, endMonth, function(err, rows) {
+    if (err != undefined || rows == null)
+    {
+      console.log("Error: " + err);
+      res.status(404).end(); 
+      return;
+    }
+    res.json(rows); 
+  });
+});
+
+/* Get a list of transactions for the given year. */
+router.get('/transactions/:year', function(req, res, next) {
+  if (isNaN(req.params.year)) //parameters must be numbers
+  {
+    console.log("The year " + req.params.year + " is not a number.");
+    res.status(404).end();
+    return;
+  }
+  
+  var year = parseInt(req.params.year);
+
+  if (year < 1) //invalid year
+  {
+    console.log("The year " + year + " is invalid.");
+    res.status(404).end();
+    return;
+  }
+
+  var begYear = new Date(year, 0, 1).toJSON().substr(0, 10);
+  var endYear = new Date(year, 11, 31).toJSON().substr(0, 10);
+  db.all("SELECT * FROM Transactions WHERE date BETWEEN ? AND ?", begYear, endYear, function(err, rows) {
+    if (err != undefined || rows == null)
+    {
+      console.log("Error: " + err);
+      res.status(404).end(); 
+      return;
+    }
+    res.json(rows); 
+  });   
+});
+
 /* Add a new transaction to the database. */
 router.post('/transactions', function(req, res, next) {
-  //console.log(req.body);
   var properties = "classification, type, amount, description";
   var numProperties = 4;
 
@@ -58,13 +154,26 @@ router.post('/transactions', function(req, res, next) {
   {
     db.run("INSERT INTO Transactions (" + properties + ") VALUES (?, ?, ?, ?)", req.body.classification, req.body.type, req.body.amount, req.body.description); 
   }
-  else if (numProperties == 5) //check is for clarity rather than necessity
+  else if (numProperties == 5) //checking numProperties here is for clarity rather than necessity
   {
     db.run("INSERT INTO Transactions (" + properties + ") VALUES (?, ?, ?, ?, ?)", req.body.date, req.body.classification, req.body.type, req.body.amount, req.body.description); 
   }
 
-  //get id of newly created db entry
-  res.end();
+  //The query below produces the right id assuming no new transactions
+  //were added. A more consistently accurate way of doing this would be to query by all
+  //the properties passed in the request body. However, this assumption
+  //should be fine for now, since there is only one client for the server
+  //and a transaction should be added faster than a user can request a transaction deletion
+  //through the UI.
+  db.get("SELECT transactionId FROM Transactions ORDER BY transactionId DESC LIMIT 1", function(err, row) {
+    if (err != undefined || row == undefined)
+    {
+      //the transaction was deleted before querying for it
+      console.log("The transaction was not found in the database.");
+      res.json({ id: -1 });
+    }
+    res.json({ id: row.transactionId });
+  });
 });
 
 module.exports = router;
