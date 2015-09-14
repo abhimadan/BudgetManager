@@ -2,11 +2,6 @@
 // maybe have a text file or another database table to store different expense types
 // this feature would require some more REST routes related to adding, deleting, and getting the different types
 
-function isNumber(x)
-{
-  return typeof(x) === "number";
-}
-
 var express = require('express');
 var router = express.Router();
 
@@ -28,6 +23,20 @@ db.serialize(function() {
 // add a new transaction [x]
 // update a transaction 
 // delete a transaction 
+
+// This should also have a way to persistently store income and expense types.
+// maybe in json like this:
+// { "expenses" : [ ... ], "income" : [ .. ] }
+// store in file called types.json (should be added to gitignore)
+// routes related to this feature:
+// get expense types
+// get income types
+// add expense or income type
+// remove expense or income type
+
+// another feature to add is to produce income statements for the month and year
+// there should be enough routes defined already to do this on the client side
+// maybe consider adding routes to calculate total income and expenses here
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -128,6 +137,7 @@ router.get('/transactions/:year', function(req, res, next) {
 
   var begYear = new Date(year, 0, 1).toJSON().substr(0, 10);
   var endYear = new Date(year, 11, 31).toJSON().substr(0, 10);
+
   db.all("SELECT * FROM Transactions WHERE date BETWEEN ? AND ?", begYear, endYear, function(err, rows) {
     if (err != undefined || rows == null)
     {
@@ -163,7 +173,7 @@ router.post('/transactions', function(req, res, next) {
   //were added. A more consistently accurate way of doing this would be to query by all
   //the properties passed in the request body. However, this assumption
   //should be fine for now, since there is only one client for the server
-  //and a transaction should be added faster than a user can request a transaction deletion
+  //and a transaction should be added faster than a user can request a delete
   //through the UI.
   db.get("SELECT transactionId FROM Transactions ORDER BY transactionId DESC LIMIT 1", function(err, row) {
     if (err != undefined || row == undefined)
