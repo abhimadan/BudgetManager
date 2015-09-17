@@ -1,4 +1,10 @@
+# persistent data
 transactions.db
+types.json
+
+# extra files that aren't part of the project
 npm-debug.log
-node_modules
 .DS_Store
+
+# node modules, run npm install to get them instead of through source control
+node_modules

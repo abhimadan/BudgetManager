@@ -2,6 +2,8 @@
 // maybe have a text file or another database table to store different expense types
 // this feature would require some more REST routes related to adding, deleting, and getting the different types
 
+var fs = require('fs');
+
 var express = require('express');
 var router = express.Router();
 
@@ -19,10 +21,10 @@ db.serialize(function() {
 
 // routes to add:
 // query for transactions within a day, month, or year [x]
-// 	maybe also query by classification?
+// maybe also query by classification?
 // add a new transaction [x]
-// update a transaction 
-// delete a transaction 
+// update a transaction [x]
+// delete a transaction [x]
 
 // This should also have a way to persistently store income and expense types.
 // maybe in json like this:
@@ -151,6 +153,7 @@ router.get('/transactions/:year', function(req, res, next) {
 
 /* Add a new transaction to the database. */
 router.post('/transactions', function(req, res, next) {
+  //maybe add checks for all the properties in req.body here
   var properties = "classification, type, amount, description";
   var numProperties = 4;
 
@@ -180,10 +183,62 @@ router.post('/transactions', function(req, res, next) {
     {
       //the transaction was deleted before querying for it
       console.log("The transaction was not found in the database.");
-      res.json({ id: -1 });
+      res.json({ newId: -1 });
     }
-    res.json({ id: row.transactionId });
+    res.json({ newId: row.transactionId });
   });
+});
+
+/* Updates an existing transaction's data. */
+router.put('/transactions/:id', function(req, res, next) {
+  //check if id is an int
+  //query for transaction, update fields with req properties
+  //need to first check if all the properties are there, and parse
+  //them as required
+  
+  //the checks mentioned above are not here right now, but they may be added later
+  //it's possible that they're not necessary, since these routes are accessed
+  //through a web client
+
+  var id = parseInt(req.params.id);
+  
+  db.run("UPDATE Transactions SET date = ?, classification = ?, type = ?, amount = ?, description = ? WHERE transactionId = ?", req.body.date, req.body.classification, req.body.type, req.body.amount, req.body.description, id);
+
+  res.json({ updatedId: id });
+});
+
+/* Deletes an existing transaction. */
+router.delete('/transactions/:id', function(req, res, next) {
+  var id = parseInt(req.params.id);
+
+  db.run("DELETE FROM Transactions WHERE transactionId = ?", id);
+
+  res.json({ deletedId: id });
+});
+
+/* Adds an expense or income type to the list. */
+router.post('/types/:classification', function(req, res, next) {
+  var classification = parseInt(req.params.classification);
+  var typesList = {
+    expenses: [],
+    income: []
+  };
+
+  if (fs.existsSync("types.json"))
+  {
+    //load json from file
+    typesList = JSON.parse(fs.readFileSync("types.json", "utf8"));
+  }
+  
+  var property = classification == 0 ? "expenses" : "income";
+
+  if (typesList[property].indexOf(req.body.type) < 0)
+  {
+    typesList[property].push(req.body.type);
+  }
+
+  fs.writeFileSync("types.json", JSON.stringify(typesList));
+  res.json(typesList);
 });
 
 module.exports = router;
