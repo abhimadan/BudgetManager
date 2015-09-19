@@ -235,10 +235,62 @@ router.post('/types/:classification', function(req, res, next) {
   if (typesList[property].indexOf(req.body.type) < 0)
   {
     typesList[property].push(req.body.type);
+    res.json({ status: "added" });
+  }
+  else
+  {
+    res.json({ status: "exists" });
   }
 
   fs.writeFileSync("types.json", JSON.stringify(typesList));
+});
+
+/* Gets the stored list of income and expense types. */
+router.get('/types', function(req, res, next) {
+  var typesList = {
+    expenses: [],
+    income: []
+  };
+
+  if (fs.existsSync("types.json"))
+  {
+    //load json from file
+    typesList = JSON.parse(fs.readFileSync("types.json", "utf8"));
+  } 
+
   res.json(typesList);
+});
+
+/* Deletes the given type from the given classification list. */
+router.delete('/types/:classification/:type', function(req, res, next) {
+  var typesList = {
+    expenses: [],
+    income: []
+  };
+
+  if (fs.existsSync("types.json"))
+  {
+    //load json from file
+    typesList = JSON.parse(fs.readFileSync("types.json", "utf8"));
+  }
+
+  var classification = parseInt(req.params.classification);
+  var property = classification == 0 ? "expenses" : "income"; 
+
+  var type = req.params.type;
+
+  var index = typesList[property].indexOf(type);
+
+  if (index < 0)
+  {
+    res.json({ status: "not in list" });
+  }
+  else
+  {
+    typesList[property].splice(index, 1);
+
+    res.json({ status: "deleted" });
+  }
 });
 
 module.exports = router;
