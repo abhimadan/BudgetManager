@@ -3,5 +3,10 @@ html
   head
     title= title
     link(rel='stylesheet', href='/stylesheets/style.css')
-  body
+    script(
+      type='text/javascript',
+      src='https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.6/angular.min.js'
+    )
+    script(type='text/javascript', src='javascripts/angularApp.js')
+  body(ng-app='budgetManager', ng-controller='MainCtrl')
     block content

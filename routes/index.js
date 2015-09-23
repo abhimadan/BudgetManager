@@ -19,18 +19,6 @@ db.serialize(function() {
 
 // the home page will also need to be redesigned to work with the app
 
-// routes to add:
-// query for transactions within a day, month, or year [x]
-// maybe also query by classification?
-// add a new transaction [x]
-// update a transaction [x]
-// delete a transaction [x]
-
-// This should also have a way to persistently store income and expense types.
-// maybe in json like this:
-// { "expenses" : [ ... ], "income" : [ .. ] }
-// store in file called types.json (should be added to gitignore)
-// routes related to this feature:
 // get expense types
 // get income types
 // add expense or income type
@@ -259,6 +247,22 @@ router.get('/types', function(req, res, next) {
   } 
 
   res.json(typesList);
+});
+
+/* Gets the stored list of income or expense types. */
+router.get('/types/:classification', function(req, res, next) {
+  var classification = parseInt(req.params.classification);
+  var property = classification == 0 ? "expenses" : "income"; 
+
+  var classList = [];
+
+  if (fs.existsSync("types.json"))
+  {
+    //load json from file and store only the required type
+    classList = JSON.parse(fs.readFileSync("types.json", "utf8"))[property];
+  }
+
+  res.json(classList);
 });
 
 /* Deletes the given type from the given classification list. */
