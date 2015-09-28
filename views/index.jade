@@ -1,19 +1,20 @@
 extends layout
 
 block content
-  h1 Budget Manager
-  #blurb
-    p An easy way to track your money.
-  form
-    input(type="date", name="date")
-    br
-    input(type="radio", name="classification", value="expense")
-    label(for="expense") Expense
-    input(type="radio", name="classification", value="income")
-    label(for="income") Income
-    br
-    input(type="number", step="0.01", min="0", name="amount")
-    br
-    input(name="description", placeholder="Transaction description")
-    br
-    input(type="submit", value="Add")
+  h1#title= title
+  p#blurb An easy way to track your money.
+  - var add = true;
+  include transaction
+
+  // the list below should have query selectors
+  // (maybe a radio button set and a date/month/year picker)
+  // use ng-repeat to generate multiple forms or divs with similar features to the form
+  // or just add a value attribute to the relevant tags
+  // populate these with database data
+
+  //since the form is bound to the controller now, this doesn't work
+  //may need a new controller for this
+
+  //commented out for now until new controller is added
+  //- add = false;
+  //include transaction

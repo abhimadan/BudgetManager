@@ -19,18 +19,13 @@ db.serialize(function() {
 
 // the home page will also need to be redesigned to work with the app
 
-// get expense types
-// get income types
-// add expense or income type
-// remove expense or income type
-
 // another feature to add is to produce income statements for the month and year
 // there should be enough routes defined already to do this on the client side
 // maybe consider adding routes to calculate total income and expenses here
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  res.render('index', { title: 'Budget Manager' });
 });
 
 /* Get a list of transactions for the given day. */
