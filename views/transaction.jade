@@ -1,22 +1,21 @@
-form(ng-submit="addTransaction()")
-  label(for="date") Date
-  input(type="date", name="date", ng-model="transaction.date")
-  br
-  input(type="radio", name="classification", value="0" checked, ng-model="transaction.classification")
-  label(for="expense") Expense
-  input(type="radio", name="classification", value="1", ng-model="transaction.classification")
-  label(for="income") Income
-  br
-  label(for="type") Type
-  input(type="text", name="type", ng-model="transaction.type")
-  br
-  label(for="amount") Amount: $
-  input(type="number", step="0.01", min="0", name="amount", ng-model="transaction.amount")
-  br
-  label(for="description") Description
-  input(name="description", ng-model="transaction.description")
-  br
-  if add
-    input(type="submit", value="Add")
-  else
-    input(type="submit", value="Update")
+label(for="date") Date
+input(type="date", name="date", ng-model="transaction.date")
+br
+input(type="radio", name="classification", id="expense", value="0" checked, ng-model="transaction.classification")
+label(for="expense") Expense
+input(type="radio", name="classification", id="income", value="1", ng-model="transaction.classification")
+label(for="income") Income
+br
+label(for="type") Type
+input(type="text", name="type", ng-model="transaction.type")
+br
+label(for="amount") Amount: $
+input(type="number", step="0.01", min="0", name="amount", ng-model="transaction.amount")
+br
+label(for="description") Description
+input(name="description", ng-model="transaction.description")
+br
+if add
+  input(type="submit", value="Add")
+else
+  input(type="submit", value="Update")

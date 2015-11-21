@@ -1,9 +1,7 @@
 var app = angular.module('budgetManager', []);
 
-app.factory('transactions', [function() {
+app.factory('transactions', ['$http', function($http) {
   var transactions = {
-    list: [],
-
     create: function() {
       var transaction = {
         date: new Date(),
@@ -14,30 +12,72 @@ app.factory('transactions', [function() {
       };
 
       return transaction;
+    },
+
+    addTransaction: function(transaction) {
+      console.log(transaction.date.toJSON());
+
+      $http.post('/transactions', {
+        date: transaction.date.toJSON().substr(0, 10),
+        classification: parseInt(transaction.classification),
+        type: transaction.type,
+        amount: transaction.amount,
+        description: transaction.description
+      });
+    },
+    
+    queryTransactions: function(query, date, results) {
+      switch (query) {
+        case 0:
+          $http.get('/transactions/' + date.getFullYear())
+            .then(function(res) {
+              results.splice(0, results.length);
+              res.data.forEach(function(result) { result.date = new Date(result.date); results.push(result); });
+            });
+          break;
+        case 1:
+          $http.get('/transactions/' + date.getFullYear() + '/' + (date.getMonth() + 1))
+            .then(function (res) {
+              results.splice(0, results.length);
+              res.data.forEach(function(result) { result.date = new Date(result.date); results.push(result); });
+            });
+          break;
+        case 2:
+          $http.get('/transactions/' + date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate())
+            .then(function (res) {
+              results.splice(0, results.length);
+              res.data.forEach(function(result) { result.date = new Date(result.date); results.push(result); });
+            });
+          break;
+        default:
+          // should never be hit
+          break;
+      }
     }
   };
 
   return transactions;
 }]);
 
-app.controller('MainCtrl', ['$scope', '$http', 'transactions', function($scope, $http, transactions) {
-  //might need two separate controllers:
-  //one for new transactions, one for history
-  //they'll use the same transaction service though
-
-  $scope.history = transactions.list;
-  
+app.controller('AddCtrl', ['$scope', 'transactions', function($scope, transactions) {
   $scope.transaction = transactions.create();
+  
+  $scope.added = false;
 
   $scope.addTransaction = function() {
-    console.log($scope.transaction);
+    transactions.addTransaction($scope.transaction)
+    $scope.transaction = transactions.create();
+    $scope.added = true;
+  }
+}]);
 
-    $http.post('/transactions', {
-      date: $scope.transaction.date.toJSON().substr(0, 10),
-      classification: parseInt($scope.transaction.classification),
-      type: $scope.transaction.type,
-      amount: $scope.transaction.amount,
-      description: $scope.transaction.description
-    });
+app.controller('HistCtrl', ['$scope', 'transactions', function($scope, transactions) {
+  $scope.queryType = 2;
+  $scope.query = new Date();
+  $scope.queryResults = [];
+
+  $scope.queryTransactions = function() {
+    console.log($scope.queryType, $scope.query);
+    transactions.queryTransactions(parseInt($scope.queryType), $scope.query, $scope.queryResults);
   }
 }]);

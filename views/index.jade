@@ -4,7 +4,10 @@ block content
   h1#title= title
   p#blurb An easy way to track your money.
   - var add = true;
-  include transaction
+  #add(ng-controller="AddCtrl")
+    form(ng-submit="addTransaction()")
+      include transaction
+    p.status(ng-show="added") Transaction added!
 
   // the list below should have query selectors
   // (maybe a radio button set and a date/month/year picker)
@@ -12,9 +15,23 @@ block content
   // or just add a value attribute to the relevant tags
   // populate these with database data
 
-  //since the form is bound to the controller now, this doesn't work
-  //may need a new controller for this
+  #history(ng-controller="HistCtrl")
+    - add = false;
+    #query
+      label(for="year") Year
+      input(type="radio", name="query", id="year", value="0", ng-model="queryType")
+      label(for="month") Month
+      input(type="radio", name="query", id="month", value="1", ng-model="queryType")
+      label(for="day") Day
+      input(type="radio", name="query", id="day", value="2", ng-model="queryType")
 
-  //commented out for now until new controller is added
-  //- add = false;
-  //include transaction
+      //add a date picker here based on the value of queryType
+      form(ng-submit="queryTransactions()")
+        input(type="date", ng-model="query")
+        br
+        input(type="submit", value="Search")
+
+      #results(ng-repeat="transaction in queryResults")
+        form(ng-submit="updateTransaction()")
+          include transaction
+        {{transaction}}

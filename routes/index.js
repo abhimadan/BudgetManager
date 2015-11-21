@@ -49,6 +49,8 @@ router.get('/transactions/:year/:month/:day', function(req, res, next) {
   }
   
   var dateString = new Date(year, month - 1, day).toJSON().substr(0, 10);
+
+  console.log(dateString);
   
   if (isNaN(Date.parse(dateString)))
   {
@@ -136,6 +138,16 @@ router.get('/transactions/:year', function(req, res, next) {
 
 /* Add a new transaction to the database. */
 router.post('/transactions', function(req, res, next) {
+  var done = function(err) {
+    if (err) {
+      console.log(err);
+      res.json({ id: -1 });
+      return;
+    }
+
+    res.json({ id: this.lastID });
+  }
+
   //maybe add checks for all the properties in req.body here
   var properties = "classification, type, amount, description";
   var numProperties = 4;
@@ -148,28 +160,12 @@ router.post('/transactions', function(req, res, next) {
   
   if (numProperties == 4)
   {
-    db.run("INSERT INTO Transactions (" + properties + ") VALUES (?, ?, ?, ?)", req.body.classification, req.body.type, req.body.amount, req.body.description); 
+    db.run("INSERT INTO Transactions (" + properties + ") VALUES (?, ?, ?, ?)", req.body.classification, req.body.type, req.body.amount, req.body.description, done); 
   }
   else if (numProperties == 5) //checking numProperties here is for clarity rather than necessity
   {
-    db.run("INSERT INTO Transactions (" + properties + ") VALUES (?, ?, ?, ?, ?)", req.body.date, req.body.classification, req.body.type, req.body.amount, req.body.description); 
+    db.run("INSERT INTO Transactions (" + properties + ") VALUES (?, ?, ?, ?, ?)", req.body.date, req.body.classification, req.body.type, req.body.amount, req.body.description, done); 
   }
-
-  //The query below produces the right id assuming no new transactions
-  //were added. A more consistently accurate way of doing this would be to query by all
-  //the properties passed in the request body. However, this assumption
-  //should be fine for now, since there is only one client for the server
-  //and a transaction should be added faster than a user can request a delete
-  //through the UI.
-  db.get("SELECT transactionId FROM Transactions ORDER BY transactionId DESC LIMIT 1", function(err, row) {
-    if (err != undefined || row == undefined)
-    {
-      //the transaction was deleted before querying for it
-      console.log("The transaction was not found in the database.");
-      res.json({ newId: -1 });
-    }
-    res.json({ newId: row.transactionId });
-  });
 });
 
 /* Updates an existing transaction's data. */
